@@ -1,12 +1,135 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link rel="stylesheet" href="css/tree.css">
+  <link rel="stylesheet" href="tree.css">
+  <style type="text/css">
+    #tree{
+      width:50%;
+      float:left;
+      display: inline-block;
+      overflow: auto;
+      height:500px;
+    }
+    #details{
+      width:50%;
+      float:left;
+      display: inline-block;
+    }
+  </style>
 </head>
 <body>
-  <div id="tree"></div>
+
+  <div id="parent">
+    <div id="tree"></div>
+    <div id="details">
+      <table border="1">
+        <thead>
+          <tr>
+            <th>Goods</th>
+            <th>Hier. Pos.</th>
+            <th>Indent</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <script src="https://code.jquery.com/jquery-3.6.3.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
   <script src="js/tree.js"></script>
   <script src="js/data.js"></script>
   <script src="js/example.js"></script>
+  <script type="text/javascript">
+    function copyToClipboard(text) {
+        if (window.clipboardData && window.clipboardData.setData) {
+            // Internet Explorer-specific code path to prevent textarea being shown while dialog is visible.
+            return window.clipboardData.setData("Text", text);
+
+        }
+        else if (document.queryCommandSupported && document.queryCommandSupported("copy")) {
+            var textarea = document.createElement("textarea");
+            textarea.textContent = text;
+            textarea.style.position = "fixed";  // Prevent scrolling to bottom of page in Microsoft Edge.
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                return document.execCommand("copy");  // Security exception may be thrown by some browsers.
+            }
+            catch (ex) {
+                console.warn("Copy to clipboard failed.", ex);
+                return prompt("Copy to clipboard: Ctrl+C, Enter", text);
+            }
+            finally {
+                document.body.removeChild(textarea);
+            }
+        }
+    }    
+    function select(e){
+      //this.focus()
+      //e.select()
+      details = document.getElementById("details")
+      data_line = e.innerText
+      find(e, data_line)
+      copyToClipboard(data_line.split(" ")[0])
+      console.log('select', e)
+    }
+    tree.on('open', e => console.log('open', e));
+    tree.on('select', e => select(e));
+    tree.on('action', e => console.log('action', e));
+
+    // /100000000 LIVE ANIMALS
+    function find(element, data){
+      hier_array = find_parent(element, []) 
+      hier_array.reverse() 
+      data = find_details(structure, hier_array)["data"]
+      console.log(data)
+      tr = document.createElement("tr")
+      for (let key in data){
+        td = document.createElement("td")
+        td.innerText = data[key]//if start with http then td.innerHtml=html tag 
+        tr.appendChild(td)
+      }
+      
+      table = document.getElementById("details").children[0]
+      tbody = table.children[1]
+      $(tbody).find("tr").each(function(index, ele){
+        console.log(ele)
+        $(ele).remove()
+      })
+      tbody.appendChild(tr)
+    }
+
+    function find_parent(ele, hier){
+        if (ele.tagName == "A"){
+          hier.push(ele.innerText)        
+        }
+        parent_tag = $(ele).parent()[0]
+        if (parent_tag.tagName == "DETAILS" && parent_tag.children[0].textContent.trim() != ""){
+            hier.push(parent_tag.children[0].textContent)
+            hier = find_parent(parent_tag, hier)
+        }
+      return hier
+    }
+
+    function find_details(data, hierarchy){
+        for (index in data){
+            if (hierarchy[0] == data[index]["name"]){
+              hierarchy = hierarchy.slice(1)
+              if (hierarchy.length == 0){
+                return data[index]
+              }else{
+                return find_details(
+                  data[index]["children"], 
+                  hierarchy
+                )         
+              }         
+            }
+        }    
+    }
+
+  </script>  
 </body>
 </html>
